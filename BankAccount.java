@@ -1,11 +1,7 @@
-import java.util.concurrent.locks.ReentrantLock;
 
 public class BankAccount {
 
     private double balance;
-
-    private final ReentrantLock lock =
-        new ReentrantLock();
 
     // Constructor
     public BankAccount(double initialBalance) {
@@ -13,100 +9,65 @@ public class BankAccount {
     }
 
     // Deposit method
-   public synchronized void deposit(double amount) {
+    public synchronized void deposit(double amount) {
+        if (amount > 0) {
+            balance += amount;
 
-    lock.lock();
-
-    try {
-        balance += amount;
-
-        System.out.println(
-            "Deposited KSh " + amount
-        );
-
-    } finally {
-        lock.unlock();
+            System.out.println(
+                "Deposited: KSh " + amount
+            );
+        }
     }
-}
 
     // Withdrawal method
-   public synchronized boolean withdraw(double amount) {
+    public synchronized boolean withdraw(double amount) {
 
-    lock.lock();
-
-    try {
-
-        if (amount <= 0 || balance < amount) {
-            System.out.println("Insufficient funds!");
+        if (amount <= 0) {
             return false;
         }
 
-        balance -= amount;
+        if (balance >= amount) {
+            balance -= amount;
 
-        System.out.println(
-            "Withdrawn KSh " + amount
-        );
+            System.out.println(
+                "Withdrawn: KSh " + amount
+            );
 
-        return true;
+            return true;
+        }
 
-    } finally {
-        lock.unlock();
+        System.out.println("Insufficient funds!");
+
+        return false;
     }
-}
+
     // Money transfer method
-   private static final ReentrantLock transferLock =
-    new ReentrantLock();
+    public boolean transferTo(
+        BankAccount destination, double amount) {
 
-public boolean transferTo(
-    BankAccount destination, double amount) {
+        synchronized (this) {
 
-    transferLock.lock();
-
-    try {
-
-        lock.lock();
-
-        try {
-
-            if (amount <= 0 || balance < amount) {
+            if (balance < amount || amount <= 0) {
+                System.out.println("Transfer failed!");
                 return false;
             }
 
-            destination.lock.lock();
-
-            try {
+            synchronized (destination) {
 
                 balance -= amount;
                 destination.balance += amount;
 
                 System.out.println(
-                    "Transfer successful: KSh " + amount
+                    "Transferred: KSh " + amount
                 );
 
                 return true;
-
-            } finally {
-                destination.lock.unlock();
             }
-
-        } finally {
-            lock.unlock();
         }
-
-    } finally {
-        transferLock.unlock();
     }
-}
 
     // Balance inquiry method
     public synchronized double getBalance() {
-
-    lock.lock();
-
-    try {
         return balance;
-
-    } finally {
-        lock.unlock();
     }
 }
